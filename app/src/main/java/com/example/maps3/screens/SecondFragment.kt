@@ -2,22 +2,22 @@ package com.example.maps3.screens
 
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.navigation.fragment.findNavController
+import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.navArgs
 import com.example.maps3.R
-import com.example.maps3.databinding.FragmentSecondBinding
+import com.example.maps3.retrofit.Products
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.gson.Gson
 
 class SecondFragment : Fragment() {
 
@@ -25,13 +25,20 @@ class SecondFragment : Fragment() {
     private val points = mutableListOf<LatLng>()
     private lateinit var coordinatesTextView: TextView
     private var coordinates: List<LatLng>? = null
+    private var products: Products? = null
+
+    val args: SecondFragmentArgs by navArgs()
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        products = Gson().fromJson(args.products, Products::class.java)
+    }
 
     override fun onCreateView(
-
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View? {
-
         val view = inflater.inflate(R.layout.fragment_second, container, false)
 
         coordinatesTextView = view.findViewById(R.id.coordinatesTextView)
@@ -57,6 +64,33 @@ class SecondFragment : Fragment() {
                         map.addMarker(marker)
                     }
 
+                    products?.let { products ->
+                        for (product in products.points) {
+                            map.addMarker(
+                                MarkerOptions()
+                                    .position(
+                                        LatLng(
+                                            product.latitude.toDouble(),
+                                            product.longitude.toDouble(),
+                                        ),
+                                    ),
+                            )
+                        }
+                        products.points.getOrNull(0)?.let { point ->
+                            map.moveCamera(
+                                CameraUpdateFactory.newCameraPosition(
+                                    CameraPosition.fromLatLngZoom(
+                                        LatLng(
+                                            point.latitude.toDouble(),
+                                            point.longitude.toDouble(),
+                                        ),
+                                        12F,
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+
                     // Обновляем текстовое поле с координатами
                     val coordinatesText = "Coordinates: ${points.joinToString(", ")}"
                     coordinatesTextView.text = coordinatesText
@@ -80,12 +114,8 @@ class SecondFragment : Fragment() {
         coordinates = points
         Log.d("SecondFragment", "Received coordinates: $coordinates")
 
-    fun getPoints(): List<LatLng> {
-        return points
+        fun getPoints(): List<LatLng> {
+            return points
+        }
     }
 }
-}
-
-
-
-
