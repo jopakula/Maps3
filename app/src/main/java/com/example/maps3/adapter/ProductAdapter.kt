@@ -16,6 +16,10 @@ class ProductAdapter : RecyclerView.Adapter<ProductAdapter.ViewHolder>() {
         fun bind(product: Product) {
             binding.id.text = product.id
             binding.data.text = product.data
+            binding.latitude.text = product.id
+            binding.longitude.text = product.data
+            binding.mac.text = product.id
+            binding.temp.text = product.data
         }
     }
 

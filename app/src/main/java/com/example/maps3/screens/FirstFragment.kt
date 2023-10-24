@@ -1,20 +1,21 @@
 package com.example.maps3.screens
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.TextView
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.maps3.MAIN
 import com.example.maps3.R
 import com.example.maps3.adapter.ProductAdapter
-import com.example.maps3.databinding.FragmentFirstBinding
 import com.example.maps3.retrofit.ProductApi
 import com.example.maps3.retrofit.Products
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,11 +23,12 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.Response
 
 class FirstFragment : Fragment() {
     private lateinit var adapter: ProductAdapter
     private lateinit var rcView: RecyclerView
+    private lateinit var textViewCoordinates: TextView
+    private val coordinatesList = mutableListOf<LatLng>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -36,9 +38,10 @@ class FirstFragment : Fragment() {
 
         rcView = view.findViewById(R.id.rcView)
         adapter = ProductAdapter()
-
         rcView.layoutManager = LinearLayoutManager(requireContext())
         rcView.adapter = adapter
+
+        textViewCoordinates = view.findViewById(R.id.textViewCoordinates) // Найдите TextView
 
         val interceptor = HttpLoggingInterceptor()
         interceptor.level = HttpLoggingInterceptor.Level.BODY
@@ -60,44 +63,43 @@ class FirstFragment : Fragment() {
                 val productList: Products = ProductApi.getAllProducts()
                 requireActivity().runOnUiThread {
                     adapter.submitList(productList.points)
+                    // Создайте список координат и передайте его в SecondFragment
+                    val coordinates = productList.points.map {
+                        LatLng(
+                            it.latitude.toDouble(),
+                            it.longitude.toDouble()
+                        )
+                    }
+
+                    val secondFragment = parentFragmentManager.findFragmentByTag("secondFragment") as SecondFragment?
+                    secondFragment?.addPoints(coordinates)
+
+                    Log.d("FirstFragment", "Coordinates created: $coordinates")
+                    val newSecondFragment = SecondFragment()
+                    newSecondFragment.addPoints(coordinates)
+
+
+                    // Преобразуйте список координат в текст и установите его в TextView
+                    val coordinatesText = coordinates.joinToString("\n")
+                    textViewCoordinates.text = coordinatesText
+
+
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Обработайте ошибку
             }
         }
-
         return view
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Найдите кнопку по идентификатору
         val btnNext = view.findViewById<Button>(R.id.btn_next)
 
-        // Установите обработчик клика на кнопку
         btnNext.setOnClickListener {
+
+
             findNavController().navigate(R.id.action_firstFragment_to_secondFragment)
         }
     }
 }
-
-//class FirstFragment : Fragment() {
-//
-//    lateinit var binding: FragmentFirstBinding
-//
-//    override fun onCreateView(
-//        inflater: LayoutInflater, container: ViewGroup?,
-//        savedInstanceState: Bundle?
-//    ): View? {
-//        binding = FragmentFirstBinding.inflate(layoutInflater, container, false)
-//        return binding.root
-//    }
-//
-//    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-//        super.onViewCreated(view, savedInstanceState)
-//        binding.btnNext.setOnClickListener {
-//            MAIN.navController.navigate(R.id.action_firstFragment_to_secondFragment)
-//        }
-//    }
-//}
